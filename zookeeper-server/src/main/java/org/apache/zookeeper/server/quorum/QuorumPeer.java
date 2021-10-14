@@ -892,7 +892,14 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             LOG.warn("Problem starting AdminServer", e);
             System.out.println(e);
         }
+        /**
+         * 1、 启动一个listener，负责处理bio连接
+         *    当连接成功时，为每个连接建立并启动SendWorker、RecvWorker
+         * 2、 创建一个FastLeaderElection（electionAlg）并启动
+         *          创建WorkerSender、WorkerReceiver并启动;
+         */
         startLeaderElection();
+        // start内负责收发选票 当收不到选票时就去建立连接
         super.start();
     }
 
@@ -1224,8 +1231,10 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                            reconfigFlagClear();
                             if (shuttingDownLE) {
                                shuttingDownLE = false;
+                               // start里面启动一次了，这里为啥还要启动?
                                startLeaderElection();
                                }
+                            // electionAlg的lookForLeader方法
                             setCurrentVote(makeLEStrategy().lookForLeader());
                         } catch (Exception e) {
                             LOG.warn("Unexpected exception", e);
