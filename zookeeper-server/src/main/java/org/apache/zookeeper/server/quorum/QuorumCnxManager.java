@@ -483,7 +483,7 @@ public class QuorumCnxManager {
             // Otherwise proceed with the connection
         } else {
             LOG.debug("Have larger server identifier, so keeping the connection: (myId:{} --> sid:{})", self.getId(), sid);
-            // 客户端的SendWorker、RecvWorker是在这里创建 运行的
+            // 主动连接端的SendWorker、RecvWorker是在这里创建 运行的
             SendWorker sw = new SendWorker(sock, sid);
             RecvWorker rw = new RecvWorker(sock, din, sid, sw);
             sw.setRecv(rw);

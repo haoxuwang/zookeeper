@@ -1092,8 +1092,28 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             }
             QuorumCnxManager.Listener listener = qcm.listener;
             if(listener != null){
+                /**
+                 * 启动了端口监听
+                 * 如果有连接过来，并且sid>自己的sid
+                 * 创建SendWorker、RecvWorker 用来最终的通信
+                 * SendWorker：把queueSendMap中拿出对应的queue，取出数据发送出去
+                 * RecvWorker：把远端传过来的数据存到recvQueue中
+                 * --------------------------------------------------------
+                 * sid < 自己的sid时 会关闭连接，并进行反向连接
+                 * 反向连接是也会创建SendWorker、RecvWorker
+                 * -------------------------------------------------------
+                 * 可以理解为这个地方是被连接成功时执行的
+                 * 主动连接也是需要创建这两个线程，分别是在反向连接（QuorumCnxManager.connectOne）时，
+                 * 和业务端收不到选票时创建的（QuorumCnxManager.connectAll）
+                 *
+                 */
                 listener.start();
                 FastLeaderElection fle = new FastLeaderElection(this, qcm);
+                /**
+                 * 启动了WorkerSender、WorkerReceiver
+                 * WorkerSender：取出sendqueue中的数据,queueSendMap中拿出对应的queue放进去
+                 * WorkerReceiver：取出recvqueue的数据放到recvQueue中
+                 */
                 fle.start();
                 le = fle;
             } else {
